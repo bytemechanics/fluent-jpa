@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.bytemechanics</groupId>
+		<artifactId>bytemechanics-maven</artifactId>
+		<version>1.0.2</version>
+	</parent>
+	<artifactId>fluent-jpa</artifactId>
+	<packaging>jar</packaging>
+	<name>Fluent JPA</name>
+	<version>0.0.1-SNAPSHOT</version>
+	<description>Library to convert traditional JPA syntax to fluent using functional expressions.</description>
+	<url>http://www.bytemechanics.org</url>
+	<developers>
+		<developer>
+			<name>Albert Farré Figueras</name>
+			<email>afarre@gmail.com</email>
+			<url>https://www.linkedin.com/in/albert-farré-figueras-4348aa2</url>
+			<roles>
+				<role>Developer</role>
+				<role>Product owner</role>
+			</roles>
+			<timezone>GMT+1</timezone>
+		</developer>
+	</developers>
+	<licenses>
+		<license>
+			<name>Apache License 2.0</name>
+			<url>http://opensource.org/licenses/Apache-2.0</url>
+		</license>
+	</licenses>
+	<organization>
+		<name>Byte Mechanics</name>
+		<url>http://www.bytemechanics.org</url>
+	</organization>
+	<scm>
+		<connection>https://github.com/bytemechanics/fluent-jpa.git</connection>
+		<url>https://github.com/bytemechanics/fluent-jpa</url>
+	</scm>
+	
+	<dependencies>
+		<!--dependency>
+			<groupId>javax.persistence</groupId>
+			<artifactId>javax.persistence-api</artifactId>
+			<version>2.2</version>
+		</dependency-->
+		<dependency>
+			<groupId>org.hibernate.javax.persistence</groupId>
+			<artifactId>hibernate-jpa-2.1-api</artifactId>
+			<version>1.0.0.Final</version>
+		</dependency>
+
+		<!-- TEST DEPENDENCIES -->		
+		<dependency>
+			<!-- The PreparedStatement.setCharacterStream() method was added to JDBC 4 and according to C3P0 release notes:  As of version 0.9.5, c3p0 fully supports the jdbc4 spec.-->
+			<groupId>com.mchange</groupId>
+			<artifactId>c3p0</artifactId>
+			<version>0.9.5.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-c3p0</artifactId>
+			<version>5.2.12.Final</version>
+			<exclusions>
+				<exclusion>
+					<!-- The PreparedStatement.setCharacterStream() method was added to JDBC 4 and according to C3P0 release notes:  As of version 0.9.5, c3p0 fully supports the jdbc4 spec.-->
+					<artifactId>c3p0</artifactId>
+					<groupId>c3p0</groupId>
+				</exclusion>
+			</exclusions>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>5.2.12.Final</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-jpamodelgen</artifactId>
+			<version>5.2.12.Final</version>
+			<scope>test</scope>
+		</dependency>
+<!--
+		<dependency>
+			<groupId>org.eclipse.persistence</groupId>
+			<artifactId>org.eclipse.persistence.jpa</artifactId>
+			<version>2.7.1</version>
+			<scope>test</scope>
+		</dependency>
+-->
+		<dependency>
+			<groupId>hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>1.8.0.10</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>
