@@ -26,4 +26,9 @@ public class EntityMock {
 	public void setValue(String _value) {
 		this.value=_value;
 	}
+
+	@Override
+	public String toString() {
+		return "EntityMock{" + "id=" + id + ", value=" + value + '}';
+	}
 }

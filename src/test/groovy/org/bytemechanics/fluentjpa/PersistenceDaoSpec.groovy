@@ -51,7 +51,7 @@ class PersistenceDaoSpec extends Specification {
 				currentRealSession=new EntitySessionMock(currentTransaction) 
 				return currentRealSession
 			})
-		this.sessionFactory=new PersistenceSessionFactoryMock(sessionManager);
+		this.sessionFactory=new PersistenceSessionFactoryMock(this.sessionManager);
 	}
 	def cleanup(){
 		println(">>>>> PersistenceDaoSpec >>>> cleanup")
@@ -62,7 +62,7 @@ class PersistenceDaoSpec extends Specification {
 		this.entityManagerFactory=null
 		this.persistenceUnitUtil=null
 	}
-/*
+
 	def "Transactional Query must start and commit transaction"(){
 		println(">>>>> PersistenceDaoSpec >>>>  Transactional Query must start and commit transaction")
 
@@ -111,7 +111,7 @@ class PersistenceDaoSpec extends Specification {
 			this.currentTransaction.hasBeenRollbacked()==true
 			this.currentTransaction.isActive()==false
 	}
-*/
+
 	def "save entity without id should launch an exception"(){
 		println(">>>>> PersistenceDaoSpec >>>>  save entity without id should launch an exception")
 		
@@ -300,17 +300,17 @@ class PersistenceDaoSpec extends Specification {
 		setup:
 			def PersistenceDao persistenceDao=new PersistenceDaoMock(this.sessionFactory);
 			def EntityMock entity=new EntityMock("id1","value1")
+			def EntityMock entity2=new EntityMock("id2","value2")
 			def PersistenceSession session=persistenceDao.getSessionFactory().getSession();
 			this.currentRealSession.persist(entity)
 			session.close();
 			
 		when:
-			def EntityMock entity2=new EntityMock("id2","value2")
 			persistenceDao.update(EntityMock.class,entity2)
 			
 		then:
 			1 * this.entityManagerFactory.getPersistenceUnitUtil() >> this.persistenceUnitUtil
-			1 * this.persistenceUnitUtil.getIdentifier(entity) >> "id1"
+			1 * this.persistenceUnitUtil.getIdentifier(entity2) >> "id2"
 			def exception=thrown(UnknownEntryException)
 			exception.getMessage().equals(SimpleFormat.format(UnknownEntryException.MESSAGE,"update","EntityMock","id2"))
 			this.currentRealSession.isClosed()==true
@@ -332,11 +332,9 @@ class PersistenceDaoSpec extends Specification {
 			session.close();
 			
 		when:
-			persistenceDao.delete(EntityMock.class,entity)
+			persistenceDao.delete(EntityMock.class,"id1")
 			
 		then:
-			1 * this.entityManagerFactory.getPersistenceUnitUtil() >> this.persistenceUnitUtil
-			1 * this.persistenceUnitUtil.getIdentifier(entity) >> "id1"
 			this.currentRealSession.getRepo().get("id1")==null
 			this.currentRealSession.isClosed()==true
 			this.currentTransaction.hasBeenStarted()==true
@@ -355,12 +353,9 @@ class PersistenceDaoSpec extends Specification {
 			session.close();
 			
 		when:
-			def EntityMock entity2=new EntityMock("id2","value2")
-			persistenceDao.delete(EntityMock.class,entity2)
+			persistenceDao.delete(EntityMock.class,"id2")
 			
 		then:
-			1 * this.entityManagerFactory.getPersistenceUnitUtil() >> this.persistenceUnitUtil
-			2 * this.persistenceUnitUtil.getIdentifier(entity) >> "id1"
 			def exception=thrown(UnknownEntryException)
 			exception.getMessage().equals(SimpleFormat.format(UnknownEntryException.MESSAGE,"delete","EntityMock","id2"))
 			this.currentRealSession.isClosed()==true

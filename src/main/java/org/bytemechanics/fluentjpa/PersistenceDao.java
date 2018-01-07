@@ -55,7 +55,9 @@ public interface PersistenceDao {
 		
 		logger.log(Level.FINER,SimpleFormat.supplier("persistence-dao::get-id::from::{}::begin",_entity));
 		reply=Optional.ofNullable(getSessionFactory())
+						.map(sessionFactory -> {logger.log(Level.FINER,SimpleFormat.supplier("persistence-dao::get-id::from::{}::session-factory::{}",_entity,sessionFactory)); return sessionFactory;})
 						.map(sessionFactory -> sessionFactory.getPersistenceUnitUtil())
+						.map(persistenceUtil -> {logger.log(Level.FINER,SimpleFormat.supplier("persistence-dao::get-id::from::{}::persistence-util::{}",_entity,persistenceUtil)); return persistenceUtil;})
 						.filter(persistenceUtil -> persistenceUtil!=null)
 						.map(persistenceUtil -> persistenceUtil.getIdentifier(_entity))
 						.orElseThrow(() -> new EntityWithoutIdOrNotAnEntity(_action,_entityType,_entity));
@@ -88,7 +90,7 @@ public interface PersistenceDao {
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
 			throw e;
 		}catch(Exception e){
-			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
+			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("save", _entityClass, _entity,e);
 		}
 		
@@ -116,7 +118,7 @@ public interface PersistenceDao {
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw e;
 		}catch(Exception e){
-			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
+			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("contains", _entityClass, _entityId,e);
 		}
 		
@@ -145,7 +147,7 @@ public interface PersistenceDao {
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw e;
 		}catch(Exception e){
-			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
+			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("retrieve",_entityClass,_entityId,e);
 		}
 		
@@ -178,7 +180,7 @@ public interface PersistenceDao {
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
 			throw e;
 		}catch(Exception e){
-			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
+			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("update",_entityClass,_entity);
 		}
 		
@@ -207,7 +209,7 @@ public interface PersistenceDao {
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw e;
 		}catch(Exception e){
-			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
+			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("delete",_entityClass,_entityId,e);
 		}
 	}
