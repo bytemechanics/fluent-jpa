@@ -11,6 +11,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceUnitUtil;
+import org.bytemechanics.fluentjpa.exceptions.MandatoryParameterException;
 import org.bytemechanics.fluentjpa.exceptions.PersistenceSessionCreationException;
 import org.bytemechanics.fluentjpa.exceptions.PersistenceSessionSupplierException;
 import org.bytemechanics.fluentjpa.internal.session.PersistenceSessionMasterImpl;
@@ -28,34 +29,39 @@ public class PersistenceSessionManager implements Closeable{
 	private final Function<Map<String,String>,EntityManager> sessionSupplier;
 	private final EntityManagerFactory entityManagerFactory;
 	
+	
 	public PersistenceSessionManager(final String _persistenceUnit){
-		this(_persistenceUnit,Collections.emptyMap());
+		this(createFactory(_persistenceUnit,Collections.emptyMap()),null);
 	}
 	public PersistenceSessionManager(final String _persistenceUnit,final Map<String,String> _properties){
-		this.underlayingSessionThreadLocal=new ThreadLocal<>();
-		this.entityManagerFactory=createFactory(_persistenceUnit,_properties);
-		this.sessionSupplier=(properties) -> this.entityManagerFactory.createEntityManager(properties);
+		this(createFactory(_persistenceUnit,_properties),null);
+	}
+	public PersistenceSessionManager(final String _persistenceUnit,final Function<Map<String,String>,EntityManager> _sessionSupplier){
+		this(createFactory(_persistenceUnit,Collections.emptyMap()),_sessionSupplier);
+	}
+	public PersistenceSessionManager(final String _persistenceUnit,final Map<String,String> _properties,final Function<Map<String,String>,EntityManager> _sessionSupplier){
+		this(createFactory(_persistenceUnit,_properties),_sessionSupplier);
 	}
 	public PersistenceSessionManager(final EntityManagerFactory _sessionFactory){
-		this((properties) -> (PersistenceSession)_sessionFactory.createEntityManager(properties),_sessionFactory);
+		this(_sessionFactory,null);
 	}
-	public PersistenceSessionManager(final Function<Map<String,String>,EntityManager> _sessionSupplier){
-		this(_sessionSupplier,null);
-	}
-	public PersistenceSessionManager(final Function<Map<String,String>,EntityManager> _sessionSupplier,final EntityManagerFactory _sessionFactory){
+	public PersistenceSessionManager(final EntityManagerFactory _sessionFactory,final Function<Map<String,String>,EntityManager> _sessionSupplier){
 		this.underlayingSessionThreadLocal=new ThreadLocal<>();
-		this.sessionSupplier=_sessionSupplier;
-		this.entityManagerFactory=_sessionFactory;
+		this.entityManagerFactory=Optional.ofNullable(_sessionFactory)
+											.orElseThrow(() -> new MandatoryParameterException("create","PersistenceSessionManager","_sessionFactory"));
+		this.sessionSupplier=Optional.ofNullable(_sessionSupplier)
+										.orElse((properties) -> this.entityManagerFactory.createEntityManager(properties));
 	}
 
-	private EntityManagerFactory createFactory(final String _persistenceUnit,final Map<String,String> _properties){
+	
+	private static EntityManagerFactory createFactory(final String _persistenceUnit,final Map<String,String> _properties){
 		
 		EntityManagerFactory reply=null;
 		
 		try{
 			reply=Persistence.createEntityManagerFactory(_persistenceUnit,_properties);
 		}catch(Throwable e){
-			logger.log(Level.WARNING, e, SimpleFormat.supplier("persistence-session-manager::create-factory::{}::with-properties::{}::failed",_persistenceUnit,_properties));
+			logger.log(Level.SEVERE, e, SimpleFormat.supplier("persistence-session-manager::create-factory::{}::with-properties::{}::failed",_persistenceUnit,_properties));
 			throw new PersistenceSessionCreationException(_persistenceUnit,_properties,e);
 		}
 		

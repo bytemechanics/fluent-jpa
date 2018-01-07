@@ -2,15 +2,29 @@ package org.bytemechanics.fluentjpa
 
 import spock.lang.*
 import javax.persistence.EntityTransaction
-import org.bytemechanics.fluentjpa.tests.LoggingSpecification
 import org.bytemechanics.fluentjpa.*
 import org.bytemechanics.fluentjpa.internal.transactions.*
 import org.bytemechanics.fluentjpa.mocks.*
+import java.util.logging.*
+import java.io.*
 
 /**
  * @author afarre
  */
-class PersistenceTransactionSpec extends LoggingSpecification {
+class PersistenceTransactionSpec extends Specification {
+
+	def setupSpec(){
+		final InputStream inputStream = PersistenceDao.class.getResourceAsStream("/logging.properties");
+		try{
+			LogManager.getLogManager().readConfiguration(inputStream);
+		}catch (final IOException e){
+			Logger.getAnonymousLogger().severe("Could not load default logging.properties file");
+			Logger.getAnonymousLogger().severe(e.getMessage());
+		}finally{
+			if(inputStream!=null)
+				inputStream.close();
+		}
+	}
 	
 	def PersistenceTransactionManager transactionManager
 	def EntityTransactionMock currentRealTransaction

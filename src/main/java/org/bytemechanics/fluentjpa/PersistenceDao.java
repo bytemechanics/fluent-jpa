@@ -6,6 +6,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bytemechanics.fluentjpa.exceptions.DuplicateEntryException;
+import org.bytemechanics.fluentjpa.exceptions.EntityWithoutIdOrNotAnEntity;
 import org.bytemechanics.fluentjpa.exceptions.MandatoryParameterException;
 import org.bytemechanics.fluentjpa.exceptions.PersistenceOperationException;
 import org.bytemechanics.fluentjpa.exceptions.UnknownEntryException;
@@ -47,7 +48,7 @@ public interface PersistenceDao {
 	}	
 
 
-	public default Object getId(final Object _entity){
+	public default Object getId(final String _action,final String _entityType,final Object _entity){
 		
 		final Logger logger=Logger.getLogger(this.getClass().getSimpleName());
 		Object reply;
@@ -55,9 +56,9 @@ public interface PersistenceDao {
 		logger.log(Level.FINER,SimpleFormat.supplier("persistence-dao::get-id::from::{}::begin",_entity));
 		reply=Optional.ofNullable(getSessionFactory())
 						.map(sessionFactory -> sessionFactory.getPersistenceUnitUtil())
-						.filter(sessionFactory -> _entity!=null)
+						.filter(persistenceUtil -> persistenceUtil!=null)
 						.map(persistenceUtil -> persistenceUtil.getIdentifier(_entity))
-						.get();
+						.orElseThrow(() -> new EntityWithoutIdOrNotAnEntity(_action,_entityType,_entity));
 		logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::get-id::from::{}::end::{}",_entity,reply));
 		
 		return reply;
@@ -74,7 +75,7 @@ public interface PersistenceDao {
 										.map(entity -> entity.getSimpleName())
 										.orElseThrow(() -> new MandatoryParameterException("save","Unknown","_entityClass"));
 			final Object entityId=Optional.ofNullable(_entity)
-										.map(entity -> getId(entity))
+										.map(entity -> getId("save",entityType,entity))
 										.orElseThrow(() -> new MandatoryParameterException("save",entityType,"_entity"));
 			transactional(sessionManager -> {
 				if(sessionManager.find(_entityClass, entityId)!=null){
@@ -83,12 +84,12 @@ public interface PersistenceDao {
 				sessionManager.persist(_entity);
 			});
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::end",_entity,_entityClass));
-		}catch(DuplicateEntryException|MandatoryParameterException e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::failed",_entity,_entityClass));
+		}catch(DuplicateEntryException|MandatoryParameterException|EntityWithoutIdOrNotAnEntity e){
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
 			throw e;
-		}catch(Throwable e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::failed",_entity,_entityClass));
-			throw new PersistenceOperationException("create", _entityClass, _entity,e);
+		}catch(Exception e){
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::save::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
+			throw new PersistenceOperationException("save", _entityClass, _entity,e);
 		}
 		
 		return _entity;
@@ -112,10 +113,10 @@ public interface PersistenceDao {
 					.orElse(false);
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::end::{}",_entityId,_entityClass,reply));
 		}catch(MandatoryParameterException e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::failed",_entityId,_entityClass));
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw e;
-		}catch(Throwable e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::failed",_entityId,_entityClass));
+		}catch(Exception e){
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::contains::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("contains", _entityClass, _entityId,e);
 		}
 		
@@ -141,10 +142,10 @@ public interface PersistenceDao {
 				.orElseThrow(() -> new PersistenceOperationException("get",entityType,entityId));
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::end::{}",_entityId,_entityClass,reply));
 		}catch(UnknownEntryException|MandatoryParameterException|PersistenceOperationException e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::failed",_entityId,_entityClass));
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw e;
-		}catch(Throwable e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::failed",_entityId,_entityClass));
+		}catch(Exception e){
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::get::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("retrieve",_entityClass,_entityId,e);
 		}
 		
@@ -163,7 +164,7 @@ public interface PersistenceDao {
 										.map(entity -> entity.getSimpleName())
 										.orElseThrow(() -> new MandatoryParameterException("update","Unknown","_entityClass"));
 			final Object entityId=Optional.ofNullable(_entity)
-										.map(entity -> getId(_entity))
+										.map(entity -> getId("update",entityType,_entity))
 										.orElseThrow(() -> new MandatoryParameterException("update",entityType,"_entity"));
 			reply=transactional(_entityClass,sessionManager -> {
 						if(sessionManager.find(_entityClass, entityId)==null){
@@ -173,11 +174,11 @@ public interface PersistenceDao {
 					})
 					.orElseThrow(() -> new PersistenceOperationException("update",entityType,entityId));
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::end::{}",_entity,_entityClass,reply));
-		}catch(MandatoryParameterException|UnknownEntryException|PersistenceOperationException e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::failed",_entity,_entityClass));
+		}catch(MandatoryParameterException|UnknownEntryException|PersistenceOperationException|EntityWithoutIdOrNotAnEntity e){
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
 			throw e;
-		}catch(Throwable e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::failed",_entity,_entityClass));
+		}catch(Exception e){
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::update::{}::of::{}::failed::{}",_entity,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("update",_entityClass,_entity);
 		}
 		
@@ -203,10 +204,10 @@ public interface PersistenceDao {
 			});
 			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::end",_entityId,_entityClass));
 		}catch(MandatoryParameterException|UnknownEntryException e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::failed",_entityId,_entityClass));
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw e;
-		}catch(Throwable e){
-			logger.log(Level.FINE,e,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::failed",_entityId,_entityClass));
+		}catch(Exception e){
+			logger.log(Level.FINE,SimpleFormat.supplier("persistence-dao::delete::{}::of::{}::failed::{}",_entityId,_entityClass,e.getMessage()));
 			throw new PersistenceOperationException("delete",_entityClass,_entityId,e);
 		}
 	}
